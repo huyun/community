@@ -3,7 +3,6 @@ package com.aplikata.community.controller;
 import java.util.UUID;
 
 import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,7 +37,7 @@ public class AuthorizeController {
 
 	@GetMapping("/callback")
 	public String callback(@RequestParam(name = "code") String code, @RequestParam(name = "state") String state,
-			HttpServletRequest request, HttpServletResponse response) {
+			HttpServletResponse response) {
 		AccessTokenDTO dto = new AccessTokenDTO();
 		dto.setClient_id(clientId);
 		dto.setClient_secret(clientSecret);
@@ -59,7 +58,6 @@ public class AuthorizeController {
 		myUser.setGmtModify(myUser.getGmtCreate());
 		myUser.setAvatarUrl(user.getAvatar_url());
 		userMapper.insert(myUser);
-		request.getSession().setAttribute("user", user);
 		response.addCookie(new Cookie("token", myUser.getToken()));
 
 		return "redirect:/";
