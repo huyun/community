@@ -1,5 +1,11 @@
 package com.aplikata.community.controller;
 
+import java.util.UUID;
+
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
@@ -8,14 +14,16 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.aplikata.community.dto.AccessTokenDTO;
 import com.aplikata.community.dto.GithubUser;
+import com.aplikata.community.mapper.UserMapper;
+import com.aplikata.community.model.User;
 import com.aplikata.community.provider.GithubProvider;
 
 @Controller
 public class AuthorizeController {
-	
+
 	@Autowired
 	private GithubProvider githubProvider;
-	
+
 	@Value("${github.client.id}")
 	private String clientId;
 
@@ -25,9 +33,12 @@ public class AuthorizeController {
 	@Value("${github.redirect.uri}")
 	private String url;
 
+	@Autowired
+	private UserMapper userMapper;
+
 	@GetMapping("/callback")
-	public String callback(@RequestParam(name = "code") String code,
-						   @RequestParam(name="state") String state) {
+	public String callback(@RequestParam(name = "code") String code, @RequestParam(name = "state") String state,
+			HttpServletRequest request, HttpServletResponse response) {
 		AccessTokenDTO dto = new AccessTokenDTO();
 		dto.setClient_id(clientId);
 		dto.setClient_secret(clientSecret);
@@ -35,21 +46,21 @@ public class AuthorizeController {
 		dto.setState(state);
 		dto.setRedirect_uri(url);
 		String token = githubProvider.getAccessToken(dto);
-		
+
 		GithubUser user = githubProvider.getUser(token);
-		System.out.println(user);
 		if (user == null || user.getId() == null)
 			return "redirect:/";
 
-//		User myUser = new User();
-//		myUser.setName(user.getName());
-//		myUser.setAccountId(String.valueOf(user.getId()));
-//		myUser.setToken(UUID.randomUUID().toString());
-//		myUser.setGmtCreate(System.currentTimeMillis());
-//		myUser.setGmtModify(myUser.getGmtCreate());
-//		myUser.setAvatarUrl(user.getAvatar_url());
-//		userMapper.insert(myUser);
-//		response.addCookie(new Cookie("token", myUser.getToken()));
+		User myUser = new User();
+		myUser.setName(user.getName());
+		myUser.setAccountId(String.valueOf(user.getId()));
+		myUser.setToken(UUID.randomUUID().toString());
+		myUser.setGmtCreate(System.currentTimeMillis());
+		myUser.setGmtModify(myUser.getGmtCreate());
+		myUser.setAvatarUrl(user.getAvatar_url());
+		userMapper.insert(myUser);
+		request.getSession().setAttribute("user", user);
+		response.addCookie(new Cookie("token", myUser.getToken()));
 
 		return "redirect:/";
 	}
