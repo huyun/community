@@ -3,6 +3,7 @@ package com.aplikata.community.controller;
 import java.util.UUID;
 
 import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,9 +14,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.aplikata.community.dto.AccessTokenDTO;
 import com.aplikata.community.dto.GithubUser;
-import com.aplikata.community.mapper.UserMapper;
 import com.aplikata.community.model.User;
 import com.aplikata.community.provider.GithubProvider;
+import com.aplikata.community.service.UserService;
 
 @Controller
 public class AuthorizeController {
@@ -33,7 +34,7 @@ public class AuthorizeController {
 	private String url;
 
 	@Autowired
-	private UserMapper userMapper;
+	private UserService userService;
 
 	@GetMapping("/callback")
 	public String callback(@RequestParam(name = "code") String code, @RequestParam(name = "state") String state,
@@ -54,12 +55,21 @@ public class AuthorizeController {
 		myUser.setName(user.getName());
 		myUser.setAccountId(String.valueOf(user.getId()));
 		myUser.setToken(UUID.randomUUID().toString());
-		myUser.setGmtCreate(System.currentTimeMillis());
-		myUser.setGmtModify(myUser.getGmtCreate());
-		myUser.setAvatarUrl(user.getAvatar_url());
-		userMapper.insert(myUser);
+		myUser.setAvatarUrl(user.getAvatarUrl());
+		userService.createOrUpdate(myUser);
 		response.addCookie(new Cookie("token", myUser.getToken()));
 
 		return "redirect:/";
 	}
+	
+    @GetMapping("/logout")
+    public String logout(HttpServletRequest request,
+                         HttpServletResponse response) {
+        request.getSession().invalidate();
+        Cookie cookie = new Cookie("token", null);
+        cookie.setMaxAge(0);
+        cookie.setPath("/");
+        response.addCookie(cookie);
+        return "redirect:/";
+    }
 }
