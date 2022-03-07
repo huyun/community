@@ -18,3 +18,6 @@ spring:
 mybatis:
   configuration:
     map-underscore-to-camel-case: true    
+  type-aliases-package: com.aplikata.community.mapper
+  mapper-locations: classpath:mapper/*.xml
+  

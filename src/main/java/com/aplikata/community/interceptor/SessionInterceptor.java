@@ -1,5 +1,7 @@
 package com.aplikata.community.interceptor;
 
+import java.util.List;
+
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -11,10 +13,11 @@ import org.springframework.web.servlet.ModelAndView;
 
 import com.aplikata.community.mapper.UserMapper;
 import com.aplikata.community.model.User;
+import com.aplikata.community.model.UserExample;
 
 @Service
 public class SessionInterceptor implements HandlerInterceptor {
-	
+
 	@Autowired
 	private UserMapper userMapper;
 
@@ -22,14 +25,16 @@ public class SessionInterceptor implements HandlerInterceptor {
 	public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
 			throws Exception {
 		Cookie[] cookies = request.getCookies();
-		User user = null;
 		if (cookies != null) {
 			for (Cookie cookie : cookies) {
 				if (cookie.getName().equals("token")) {
 					String token = cookie.getValue();
-					user = userMapper.findByToken(token);
-					if (user != null) {
-						request.getSession().setAttribute("user", user);
+					UserExample userExample = new UserExample();
+					userExample.createCriteria().andTokenEqualTo(token);
+					List<User> users = userMapper.selectByExample(userExample);
+					
+					if (users != null && users.size() > 0) {
+						request.getSession().setAttribute("user", users.get(0));
 					}
 					break;
 				}
